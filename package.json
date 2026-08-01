@@ -6,7 +6,7 @@
   "homepage": "https://yafl.dev",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "workspaces": [
     "packages/*",

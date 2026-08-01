@@ -6,7 +6,7 @@
   "license": "MIT",
   "homepage": "https://yafl.dev/mcp/",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "mcpName": "dev.yafl/mcp",
   "bin": {

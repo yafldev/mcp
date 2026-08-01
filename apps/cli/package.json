@@ -6,7 +6,7 @@
   "license": "MIT",
   "homepage": "https://yafl.dev",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "bin": {
     "yafl": "./bin/yafl.js"
