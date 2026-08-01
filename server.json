@@ -4,7 +4,7 @@
   "description": "Agent-first E2EE file transfer over MCP: move files between machines in one tool call, gone in 24h.",
   "version": "0.1.5",
   "repository": {
-    "url": "https://github.com/yafldev/yafl-mcp",
+    "url": "https://github.com/yafldev/mcp",
     "source": "github"
   },
   "packages": [
