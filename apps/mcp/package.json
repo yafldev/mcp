@@ -1,6 +1,6 @@
 {
   "name": "@yafldev/mcp",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Local stdio MCP server for YAFL – an agent-first, end-to-end-encrypted file-transfer layer.",
   "type": "module",
   "license": "MIT",
