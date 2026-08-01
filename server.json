@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "dev.yafl/mcp",
+  "description": "Agent-first E2EE file transfer over MCP: move files between machines in one tool call, gone in 24h.",
+  "version": "0.1.5",
+  "repository": {
+    "url": "https://github.com/yafldev/yafl-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@yafldev/mcp",
+      "version": "0.1.5",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "YAFL_API_KEY",
+          "description": "API key for authenticated transfers. Optional — omit and run `yafl login` (device flow) instead.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+# Publishes @yafldev/mcp (and @yafldev/cli) to npm WITH provenance — the
+# cryptographic attestation that links each published tarball to this exact
+# source commit + CI run. Provenance only works from a public repo on GitHub
+# Actions (OIDC), which is why the client lives here rather than on the
+# private Forgejo host. (Decision 4: manual publish is fine until this is in
+# place; this makes every release verifiable.)
+#
+# Prerequisites before the first run:
+#   1. This repo is public on GitHub.
+#   2. Repo secret NPM_TOKEN = an npm *automation* token for the @yafldev scope.
+#   3. Each package's version is bumped ABOVE its current live npm version, and
+#      apps/mcp's version == server.json's version (registry lockstep).
+# Then: `git tag v0.1.5 && git push --tags` triggers this.
+#
+# The registry pin for dev.yafl/mcp is updated separately with `mcp-publisher
+# publish` (needs the yafl.dev Ed25519 domain key) — not done here.
+name: publish
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # required for npm provenance (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - run: npm install
+      - run: npm run build
+      # --provenance emits the signed attestation; --access public is required
+      # for a first-time scoped publish. A version that already exists on npm
+      # will fail the step (expected — bump the version before tagging).
+      - run: npm publish --workspace @yafldev/mcp --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --workspace @yafldev/cli --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

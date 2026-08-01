@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "yafl": {
+      "command": "npx",
+      "args": ["-y", "@yafldev/mcp"]
+    }
+  }
+}

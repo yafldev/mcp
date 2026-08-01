@@ -1,0 +1,36 @@
+{
+  "name": "@yafldev/cli",
+  "version": "0.1.2",
+  "description": "yafl – the command-line client for YAFL, an agent-first, end-to-end-encrypted file-transfer layer.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://yafl.dev",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "yafl": "./bin/yafl.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --external:open",
+    "typecheck": "tsc --noEmit",
+    "prepack": "npm run build && node -e \"require('fs').copyFileSync('../../LICENSE','LICENSE')\""
+  },
+  "dependencies": {
+    "open": "11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "0.28.1",
+    "typescript": "6.0.3"
+  },
+  "bugs": {
+    "url": "https://yafl.dev"
+  }
+}

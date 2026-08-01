@@ -1,0 +1,20 @@
+{
+  "name": "yafl-mcp",
+  "private": true,
+  "type": "module",
+  "description": "Open-source YAFL client: the @yafldev/mcp MCP server and @yafldev/cli, plus the shared client-side crypto and transfer pipeline.",
+  "homepage": "https://yafl.dev",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm --workspace apps/mcp run build && npm --workspace apps/cli run build",
+    "typecheck": "npm --workspace packages/crypto run typecheck && npm --workspace packages/client run typecheck && npm --workspace apps/mcp run typecheck && npm --workspace apps/cli run typecheck",
+    "test": "npm --workspace packages/crypto run test"
+  }
+}

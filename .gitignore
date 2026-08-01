@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+# Per-package LICENSE copies are a prepack build artifact — npm only packs a
+# LICENSE that lives inside the package dir, so apps/mcp and apps/cli copy the
+# root LICENSE in at prepack time. The single source of truth is the root LICENSE.
+/apps/*/LICENSE
+SCAFFOLD-NOTES.md

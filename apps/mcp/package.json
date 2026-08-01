@@ -1,0 +1,40 @@
+{
+  "name": "@yafldev/mcp",
+  "version": "0.1.5",
+  "description": "Local stdio MCP server for YAFL – an agent-first, end-to-end-encrypted file-transfer layer.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://yafl.dev/mcp/",
+  "engines": {
+    "node": ">=20"
+  },
+  "mcpName": "dev.yafl/mcp",
+  "bin": {
+    "yafl-mcp": "./bin/yafl-mcp.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --external:@modelcontextprotocol/sdk/* --external:zod",
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "prepack": "npm run build && node -e \"require('fs').copyFileSync('../../LICENSE','LICENSE')\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "0.28.1",
+    "tsx": "4.23.0",
+    "typescript": "6.0.3"
+  },
+  "bugs": {
+    "url": "https://yafl.dev"
+  }
+}
