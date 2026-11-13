@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { createInterface } from 'node:readline/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ApiError } from '@yafl/client'
+import { ApiError, assertSecureApiUrl } from '@yafl/client'
 import { runLogin } from './commands/login.js'
 import { runPut } from './commands/put.js'
 import { runGet } from './commands/get.js'
@@ -175,7 +175,18 @@ export async function run(argv: string[], options: RunOptions): Promise<number> 
     return 2
   }
 
-  const apiUrl = (values['api-url'] as string | undefined) ?? options.env.YAFL_API_URL ?? DEFAULT_API_URL
+  // Scheme-checked before any command runs (261113-sec finding 3): an http
+  // base URL would put the bearer API key and the device-flow exchange on the
+  // wire in the clear. Loopback stays allowed for local development.
+  let apiUrl: string
+  try {
+    apiUrl = assertSecureApiUrl(
+      (values['api-url'] as string | undefined) ?? options.env.YAFL_API_URL ?? DEFAULT_API_URL,
+    )
+  } catch (err) {
+    printErr(`yafl: ${(err as Error).message}`)
+    return 2
+  }
 
   const ctx: CommandContext = {
     cwd: options.cwd,

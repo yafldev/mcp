@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { homedir } from 'node:os'
 
@@ -36,15 +36,30 @@ export function configPathFor(env: NodeJS.ProcessEnv = process.env): string {
 
 /**
  * Writes the credential file with mode 0600 (T-08-01) — owner read/write
- * only. `{ mode: 0o600 }` on `writeFile` sets the mode at creation; an
- * already-existing file with looser permissions is intentionally not
- * hardened here (a fresh login always recreates the file).
+ * only — and the directory holding it with mode 0700.
+ *
+ * The explicit `chmod` is the load-bearing part: `{ mode }` on `writeFile`
+ * applies ONLY when the call creates the file. The default flag 'w' truncates
+ * an existing file and leaves its permissions exactly as they were, so a
+ * config.json that is already 0644 (an older version of this code, a stray
+ * umask, a file restored from a backup) would keep a live API key
+ * world-readable through every subsequent login. A login must harden the file
+ * it finds, not only the one it creates.
+ *
+ * The 0700 on the directory matters for the same reason: a 0600 file under a
+ * group- or world-writable directory can still be replaced wholesale.
  */
 export async function save(creds: Credentials, options: CredentialStoreOptions = {}): Promise<void> {
   const env = options.env ?? process.env
   const path = configPathFor(env)
-  await mkdir(dirname(path), { recursive: true })
+  // `mkdir` returns the first path it created, or undefined when the
+  // directory was already there. Only a directory WE just made is hardened —
+  // an operator who points YAFL_CONFIG_DIR at a directory of their own keeps
+  // whatever permissions they chose for it.
+  const created = await mkdir(dirname(path), { recursive: true, mode: 0o700 })
+  if (created) await chmod(created, 0o700)
   await writeFile(path, `${JSON.stringify(creds, null, 2)}\n`, { mode: 0o600 })
+  await chmod(path, 0o600)
 }
 
 /**

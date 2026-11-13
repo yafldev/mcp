@@ -57,8 +57,22 @@ export async function callApi(options: ApiClientOptions, path: string, init?: Re
   })
 
   if (!res.ok) {
-    const body = (await res.json()) as { error: { code: string; message: string } }
-    throw new ApiError(body.error.code, body.error.message, res.status)
+    // The house envelope is what the Transfer API itself returns. The edge in
+    // front of it does not use it: nginx answers 413/429/502 with HTML and
+    // Cloudflare with its own page, so res.json() throws there and used to
+    // bury the real status under a SyntaxError. Fall back to the status.
+    let code = 'http_error'
+    let message = `Request failed (HTTP ${res.status})`
+    try {
+      const body = (await res.json()) as { error?: { code?: string; message?: string } }
+      if (body?.error?.code) {
+        code = body.error.code
+        message = body.error.message ?? message
+      }
+    } catch {
+      // Not JSON at all — keep the status-derived code and message.
+    }
+    throw new ApiError(code, message, res.status)
   }
 
   // A 204 (e.g. POST /:id/email's success response, HAND-04) has no body —

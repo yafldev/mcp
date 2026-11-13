@@ -35,7 +35,7 @@ export {
   type ComposedKey,
   type ParsedShareUrl,
 } from './passwordKey.js'
-export { sanitizeFilename, resolveCollision } from './fsSafety.js'
+export { sanitizeFilename, resolveCollision, collisionCandidate } from './fsSafety.js'
 export {
   MAX_TRANSFER_SIZE,
   readDirOrFile,
@@ -44,4 +44,6 @@ export {
   downloadDecrypt,
   writeDecrypted,
   MissingKeyError,
+  R2TransferError,
 } from './transferPipeline.js'
+export { assertSecureApiUrl, InsecureApiUrlError } from './apiUrl.js'

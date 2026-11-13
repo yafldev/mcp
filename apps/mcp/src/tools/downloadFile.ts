@@ -106,7 +106,14 @@ export function registerDownloadFile(server: McpServer): void {
           },
         }
       } catch (err) {
-        if (err instanceof ApiError && (err.code === 'expired' || err.code === 'not_found')) {
+        // `upload_pending` is a retryable state, not a failure of this call:
+        // the sender's bytes are still streaming (the share link exists from
+        // the moment the transfer is created), so an agent should poll, not
+        // give up. Same pass-through contract as expired/not_found.
+        if (
+          err instanceof ApiError &&
+          (err.code === 'expired' || err.code === 'not_found' || err.code === 'upload_pending')
+        ) {
           // Machine-parseable code mirroring the API's own error contract —
           // never invent a new code here (03-RESEARCH.md Pattern 2).
           return {

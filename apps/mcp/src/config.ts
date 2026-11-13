@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { assertSecureApiUrl } from '@yafl/client'
 
 /**
  * Env config, mirroring apps/server/src/config.ts's zod-parse-at-load
@@ -16,7 +17,24 @@ const envSchema = z.object({
     .startsWith('yafl_', 'YAFL_API_KEY must be a yafl_-prefixed API key')
     .optional()
     .catch(undefined),
-  YAFL_API_URL: z.string().default('https://yafl.dev'),
+  // Scheme-checked, not just string-shaped (261113-sec finding 3): every
+  // request to this origin carries either the bearer API key or a device-flow
+  // secret, so a plain-http value would downgrade all of it to cleartext.
+  // Loopback keeps plain http for local development. This one DOES fail fast
+  // at import — unlike a missing API key, a misconfigured base URL has no
+  // safe degraded mode, and failing at startup is how the MCP client's user
+  // finds out before a key is sent anywhere.
+  YAFL_API_URL: z
+    .string()
+    .default('https://yafl.dev')
+    .transform((value, ctx) => {
+      try {
+        return assertSecureApiUrl(value)
+      } catch (err) {
+        ctx.addIssue({ code: 'custom', message: (err as Error).message })
+        return z.NEVER
+      }
+    }),
 })
 
 export type Config = z.infer<typeof envSchema>

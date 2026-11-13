@@ -23,7 +23,7 @@ export function registerGetStatus(server: McpServer): void {
     {
       title: 'Get Transfer Status',
       description:
-        'Checks whether the YAFL share link at the given `url` is still live — live, expired, or not found — without downloading or decrypting anything. Returns liveness, size, and expiry only. Does not read the decryption key even if present in the URL fragment, and never fetches any file bytes.',
+        'Checks whether the YAFL share link at the given `url` is still live — live, uploading, expired, or not found — without downloading or decrypting anything. Returns liveness, size, and expiry only. Does not read the decryption key even if present in the URL fragment, and never fetches any file bytes.',
       inputSchema: {
         url: z
           .string()
@@ -37,8 +37,21 @@ export function registerGetStatus(server: McpServer): void {
       const { id } = parseShareUrl(url)
       try {
         const meta = (await callApi({ apiUrl: config.YAFL_API_URL, apiKey: config.YAFL_API_KEY }, `/api/v1/transfers/${id}`)) as {
-          size: number
+          size: number | null
           expiresAt: string
+          status?: 'pending' | 'uploaded'
+        }
+        // A resolvable link whose bytes are still streaming must NOT be
+        // reported as live: an agent polling an async handoff would try to
+        // download and fail. `size` is null until the upload completes (the
+        // server writes R2's own report at /complete), so it is omitted rather
+        // than guessed. `status` absent => an older server that only ever
+        // resolved completed uploads, so the old 'live' answer still holds.
+        if (meta.status === 'pending') {
+          return {
+            content: [{ type: 'text' as const, text: 'Uploading — the sender has not finished sending this file yet' }],
+            structuredContent: { status: 'uploading' as const, expiresAt: meta.expiresAt },
+          }
         }
         return {
           content: [{ type: 'text' as const, text: 'Live' }],

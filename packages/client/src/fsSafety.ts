@@ -34,11 +34,31 @@ export function sanitizeFilename(name: string): string {
 }
 
 /**
+ * The n-th candidate name for `filename`: n=0 is the name itself, n>=1 is
+ * `"<stem> (n)<ext>"` with the extension preserved and the suffix inserted
+ * before it. Pure — it touches no filesystem, so a caller can hand each
+ * candidate to an exclusive create and let the kernel decide whether the
+ * name is free (see writeDecrypted).
+ */
+export function collisionCandidate(filename: string, n: number): string {
+  if (n === 0) return filename
+  const ext = extname(filename)
+  const stem = basename(filename, ext)
+  return `${stem} (${n})${ext}`
+}
+
+/**
  * Given an already-sanitized `filename`, returns a name guaranteed not to
  * collide with an existing entry in `destDir`: the name unchanged if free,
  * otherwise `"<stem> (n)<ext>"` with `n` incrementing from 1 until a free
  * name is found. The extension is preserved and the suffix is inserted
  * before it.
+ *
+ * NOTE: this answers "is the name free right now", which is a question whose
+ * answer expires the moment it is given, and `existsSync` follows symlinks.
+ * It is fine for previewing or reporting a name; it is NOT a safe gate for a
+ * write. Writers use `collisionCandidate` plus an exclusive create instead —
+ * see writeDecrypted in transferPipeline.ts.
  */
 export function resolveCollision(destDir: string, filename: string): string {
   if (!existsSync(join(destDir, filename))) {
