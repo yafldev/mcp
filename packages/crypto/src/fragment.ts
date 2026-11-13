@@ -124,6 +124,24 @@ export function buildLinkArtifacts(
 const BARE_ID_PATTERN = /^[A-Za-z0-9_-]+$/
 
 /**
+ * Is `value` a transfer id in the only shape YAFL ever mints — the nanoid
+ * alphabet, nothing else?
+ *
+ * This is `BARE_ID_PATTERN` promoted to a predicate. The pattern used to be
+ * consulted in exactly one place, `parseShareUrl` below, which asks it about
+ * a string the USER supplied. fleet-secaudit #115 is about the other
+ * direction: an id that arrives FROM the API server and is interpolated into
+ * `buildRetrievalCommand`'s paste-ready `yafl get <id>#<fragment>`, right
+ * next to the decryption key. The server is untrusted for key
+ * confidentiality, so that id needs the same charset gate before it is ever
+ * put in front of a shell. Exported so `@yafl/client` can apply it at the
+ * boundary rather than copying the regex.
+ */
+export function isValidTransferId(value: unknown): value is string {
+  return typeof value === 'string' && BARE_ID_PATTERN.test(value)
+}
+
+/**
  * Inverse of `buildShareUrl` — extracts the transfer `id` from the `/t/{id}`
  * path segment and, when a hash fragment is present, decodes it. A
  * fragment-less URL, or a v1 (bare base64url) fragment, resolves

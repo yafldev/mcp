@@ -14,8 +14,14 @@
  * eavesdrop on.
  */
 
-/** Hosts for which plain http is accepted — loopback only, never a LAN address. */
-function isLoopback(hostname: string): boolean {
+/**
+ * Hosts for which plain http is accepted — loopback only, never a LAN
+ * address. Exported because the same exemption applies to the presigned
+ * storage URL the server hands back (see `transferPipeline`): the test
+ * harness and local development run both the API and the R2 stub on
+ * 127.0.0.1.
+ */
+export function isLoopbackHost(hostname: string): boolean {
   const host = hostname.toLowerCase()
   return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]'
 }
@@ -42,7 +48,7 @@ export function assertSecureApiUrl(apiUrl: string): string {
 
   if (parsed.protocol === 'https:') return apiUrl.replace(/\/+$/, '')
 
-  if (parsed.protocol === 'http:' && isLoopback(parsed.hostname)) {
+  if (parsed.protocol === 'http:' && isLoopbackHost(parsed.hostname)) {
     return apiUrl.replace(/\/+$/, '')
   }
 

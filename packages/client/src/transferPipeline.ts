@@ -8,11 +8,13 @@ import {
   toBase64Url,
   fromBase64Url,
   parseShareUrl,
+  isValidTransferId,
   zipEntries,
   type ZipEntry,
   type TransferMeta,
 } from '@yafl/crypto'
 import { callApi, type ApiClientOptions } from './apiClient.js'
+import { isLoopbackHost } from './apiUrl.js'
 import { composeKey, resolveKey } from './passwordKey.js'
 import { sanitizeFilename, collisionCandidate } from './fsSafety.js'
 
@@ -77,6 +79,70 @@ export async function readDirOrFile(
  * a fresh salt + password (LKPW-01/LKPW-04) — the exact composition both
  * apps/cli's put command and apps/mcp's upload_file tool use.
  */
+/**
+ * The API server sent something the client will not build a link or a shell
+ * command out of. Distinct from `ApiError` (an error the server *reported*)
+ * and from `R2TransferError` (storage): this is a well-formed 2xx whose
+ * CONTENTS are not trustworthy.
+ */
+export class UntrustedServerResponseError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'UntrustedServerResponseError'
+  }
+}
+
+/**
+ * Gate on the POST /api/v1/transfers body (fleet-secaudit #115).
+ *
+ * The response used to be cast — compile time only, so `id` and `uploadUrl`
+ * were whatever the server felt like sending. `id` does not stay inside the
+ * client: `buildLinkArtifacts` puts it into `yafl get <id>#<fragment>`, which
+ * the CLI prints for a human to paste and the MCP `upload_file` tool returns
+ * to the model to pass to a human or another agent. An id of
+ * `x;curl -d k=` makes that command run the server's own command in the
+ * recipient's shell WITH THE DECRYPTION KEY as an argument — and YAFL's whole
+ * threat model is that the server never learns the key. The id is also
+ * interpolated into the path of the follow-up `/complete` call.
+ *
+ * `uploadUrl` is checked in the same place because it comes from the same
+ * unchecked cast: the server chooses where the ciphertext PUT goes. Only
+ * ciphertext crosses that boundary, but https is still required so a
+ * downgraded URL cannot put it on the wire in the clear.
+ *
+ * Errors name the FIELD, never the value: a presigned URL is a bearer
+ * credential, and echoing a hostile id back into a log is how an injection
+ * string finds its second audience.
+ */
+function assertTrustedCreateResponse(body: unknown): { id: string; uploadUrl: string } {
+  const created = body as { id?: unknown; uploadUrl?: unknown } | null
+  if (!created || !isValidTransferId(created.id)) {
+    throw new UntrustedServerResponseError(
+      'The API server returned a transfer id that is not a valid YAFL id. Refusing to use it: ' +
+        'the id is placed next to your decryption key in a ready-to-run command.',
+    )
+  }
+  if (typeof created.uploadUrl !== 'string') {
+    throw new UntrustedServerResponseError('The API server returned no upload URL for this transfer.')
+  }
+  let parsed: URL
+  try {
+    parsed = new URL(created.uploadUrl)
+  } catch {
+    throw new UntrustedServerResponseError('The API server returned an upload URL that is not a URL.')
+  }
+  // Same exemption as the API base URL: plain http is accepted for loopback
+  // only, so the local R2 stub (http://127.0.0.1:<port>) keeps working while
+  // a downgraded public URL is refused.
+  if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && isLoopbackHost(parsed.hostname))) {
+    throw new UntrustedServerResponseError(
+      `The API server returned a non-https upload URL (${parsed.protocol.replace(':', '')}). ` +
+        'Refusing to send the encrypted file over it.',
+    )
+  }
+  return { id: created.id, uploadUrl: created.uploadUrl }
+}
+
 export async function uploadEncrypted(
   options: ApiClientOptions,
   input: { bytes: Uint8Array; metaName: string; metaType: string; password?: string; oneTime?: boolean },
@@ -87,11 +153,13 @@ export async function uploadEncrypted(
   const metaBlob = await encryptMeta(key, { name: metaName, type: metaType })
   const encryptedMeta = toBase64Url(metaBlob)
 
-  const created = (await callApi(options, '/api/v1/transfers', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ size: ciphertext.byteLength, encryptedMeta, oneTime: oneTime === true }),
-  })) as { id: string; uploadUrl: string }
+  const created = assertTrustedCreateResponse(
+    await callApi(options, '/api/v1/transfers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ size: ciphertext.byteLength, encryptedMeta, oneTime: oneTime === true }),
+    }),
+  )
 
   // Direct ciphertext PUT straight to R2 — no Authorization header, no API
   // key on this URL; only ciphertext bytes cross this boundary.

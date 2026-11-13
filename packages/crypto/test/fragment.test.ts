@@ -10,6 +10,7 @@ import {
   buildRetrievalCommand,
   buildLinkArtifacts,
   parseShareUrl,
+  isValidTransferId,
 } from '../src/fragment.js'
 
 describe('fragment round-trip', () => {
@@ -281,5 +282,40 @@ describe('parseShareUrl — bare compact form (HAND-02 — T-16-02 regression-cr
 
     expect(() => parseShareUrl('https://yafl.dev/not-a-share-link')).toThrow()
     expect(() => parseShareUrl('https://yafl.dev/t/abc123#9.somepayload')).toThrow(/version/i)
+  })
+})
+
+/**
+ * fleet-secaudit #115. The strict id charset existed only inside
+ * `parseShareUrl`, so an id arriving FROM the server was never checked
+ * against it. `isValidTransferId` is that charset promoted to a predicate so
+ * the client can gate a server-supplied id before it reaches a shell command.
+ */
+describe('isValidTransferId (fleet-secaudit #115)', () => {
+  it('accepts the nanoid alphabet YAFL actually mints ids from', () => {
+    expect(isValidTransferId('AApl-A3AddMT')).toBe(true)
+    expect(isValidTransferId('abc123')).toBe(true)
+    expect(isValidTransferId('a_b-C9')).toBe(true)
+  })
+
+  it('rejects shell metacharacters — the #115 injection itself', () => {
+    expect(isValidTransferId('x;curl -d k=')).toBe(false)
+    expect(isValidTransferId('x$(id)')).toBe(false)
+    expect(isValidTransferId('x`id`')).toBe(false)
+    expect(isValidTransferId('x&&id')).toBe(false)
+    expect(isValidTransferId('x|id')).toBe(false)
+  })
+
+  it('rejects whitespace, which would split the paste-ready command', () => {
+    expect(isValidTransferId('abc 123')).toBe(false)
+    expect(isValidTransferId('abc\n123')).toBe(false)
+    expect(isValidTransferId('abc\t123')).toBe(false)
+  })
+
+  it('rejects an empty id, path separators and a fragment marker', () => {
+    expect(isValidTransferId('')).toBe(false)
+    expect(isValidTransferId('a/b')).toBe(false)
+    expect(isValidTransferId('../etc')).toBe(false)
+    expect(isValidTransferId('abc#def')).toBe(false)
   })
 })

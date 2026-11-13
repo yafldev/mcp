@@ -14,6 +14,7 @@ export {
   buildRetrievalCommand,
   buildLinkArtifacts,
   parseShareUrl,
+  isValidTransferId,
   type V2ShareUrlOptions,
 } from './fragment.js'
 export { toBase64Url, fromBase64Url } from './base64url.js'

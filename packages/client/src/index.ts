@@ -45,5 +45,6 @@ export {
   writeDecrypted,
   MissingKeyError,
   R2TransferError,
+  UntrustedServerResponseError,
 } from './transferPipeline.js'
 export { assertSecureApiUrl, InsecureApiUrlError } from './apiUrl.js'
