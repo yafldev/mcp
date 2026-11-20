@@ -35,6 +35,12 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: npm install
       - run: npm run build
+      # Gates: nothing reaches npm unless it typechecks, the tests pass and the
+      # packed @yafldev/mcp tarball holds the AI skills that list_skills serves.
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm pack --dry-run --json | grep -q '"dist/skills/yafl-file-transfer/SKILL.md"'
+        working-directory: apps/mcp
       # --provenance emits the signed attestation; --access public is required
       # for a first-time scoped publish. A version that already exists on npm
       # will fail the step (expected — bump the version before tagging).
