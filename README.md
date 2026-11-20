@@ -41,6 +41,8 @@ No API key is required to start. On the first tool call the server returns a gui
 | `delete_file` | `{ id \| url }` | Revoke one of your transfers before expiry. |
 | `email_link` | `{ link, recipient }` | Email a share link straight to a recipient — the agent-to-human handoff without leaving the session. |
 | `login` | device flow | Authorize this agent (RFC 8628); it holds its own revocable key. |
+| `list_skills` | `{}` | Lists the YAFL skills (step-by-step instructions for agents) that ship with this server. Read-only, no API key. |
+| `get_skill` | `{ name }` | Returns the full SKILL.md text of one skill. Read-only, no API key. |
 
 Errors are stable and machine-readable — your agent gets `expired` or `not_found`, not a mystery 404.
 

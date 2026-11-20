@@ -52,6 +52,8 @@ agent holds its own revocable key — built for headless boxes). Get the CLI wit
 | `delete_file` | `{ id }` | Permanently deletes one of the caller's own transfers (bare id or full share URL). Destructive. |
 | `email_link` | `{ link, recipient }` | Emails a share link to a recipient inbox. Requires a verified account. Note: this is the one sanctioned exception where the full link (incl. the fragment key) transits the mail path — prefer a password-protected link for sensitive files. |
 | `login` | `{}` | Starts the device-flow login and returns `{ verificationUri, userCode }` for the human to approve; on approval the key is stored for the session. Lets an MCP-only agent onboard with no shell. |
+| `list_skills` | `{}` | Lists the YAFL skills (step-by-step instructions for agents) that ship with this server: name, description and last update date. Read-only, no API key. |
+| `get_skill` | `{ name }` | Returns the full SKILL.md text of one skill. Read-only, no API key. The skills live in `skills/<name>/SKILL.md` in the repo and ship inside the package. |
 
 All encryption and decryption happen **locally, inside this process** — the YAFL server and
 storage backend never see plaintext file contents or the decryption key. Errors are stable and

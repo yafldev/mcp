@@ -11,6 +11,7 @@ import { registerListFiles } from './tools/listFiles.js'
 import { registerDeleteFile } from './tools/deleteFile.js'
 import { registerEmailLink } from './tools/emailLink.js'
 import { registerLogin } from './tools/login.js'
+import { registerSkillTools, SKILLS_INSTRUCTION } from './skills.js'
 
 /**
  * Builds and registers the yafl-mcp server without connecting a transport,
@@ -18,7 +19,15 @@ import { registerLogin } from './tools/login.js'
  * (03-RESEARCH.md Pattern 3).
  */
 export function createServer(): McpServer {
-  const server = new McpServer({ name: 'yafl-mcp', version: '0.1.0' })
+  const server = new McpServer(
+    { name: 'yafl-mcp', version: '0.1.0' },
+    {
+      instructions:
+        'YAFL moves files between agents and machines, end-to-end encrypted, with links that expire after 24 hours. ' +
+        'The key after # in a share link or code never goes to the server: never log it and never send it to another service. ' +
+        SKILLS_INSTRUCTION,
+    },
+  )
   registerUploadFile(server)
   registerGetStatus(server)
   registerDownloadFile(server)
@@ -26,6 +35,7 @@ export function createServer(): McpServer {
   registerDeleteFile(server)
   registerEmailLink(server)
   registerLogin(server)
+  registerSkillTools(server)
   return server
 }
 

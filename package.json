@@ -15,6 +15,6 @@
   "scripts": {
     "build": "npm --workspace apps/mcp run build && npm --workspace apps/cli run build",
     "typecheck": "npm --workspace packages/crypto run typecheck && npm --workspace packages/client run typecheck && npm --workspace apps/mcp run typecheck && npm --workspace apps/cli run typecheck",
-    "test": "npm --workspace packages/crypto run test"
+    "test": "npm --workspace packages/crypto run test && npm --workspace apps/mcp run test"
   }
 }
